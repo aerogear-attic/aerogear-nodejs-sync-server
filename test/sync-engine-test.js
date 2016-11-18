@@ -141,9 +141,9 @@ test('[server-sync-engine] verify shadow', function (t) {
   t.equal(shadow.clientVersion, 0, 'client version should be 0');
   t.equal(shadow.content, doc.content, 'content should be the same');
 
-  const shadowBackup = syncEngine.getBackup(doc.id, clientId);
+  const shadowBackup = syncEngine.getShadowBackup(doc.id, clientId);
   t.equal(shadowBackup.version, 0, 'backup version should be 0');
-  t.equal(shadowBackup.content, doc.content, 'content should be the same');
+  t.equal(shadowBackup.shadow.content, doc.content, 'content should be the same');
   t.end();
 });
 
@@ -176,7 +176,7 @@ test('[server-sync-engine] patch', function (t) {
   syncEngine.addDocument(doc, clientId);
   const shadow = {
     id: doc.id,
-    clientId: doc.clientId,
+    clientId: clientId,
     clientVersion: 0,
     serverVersion: 0,
     content: 'stop calling me Shirley'
@@ -185,7 +185,7 @@ test('[server-sync-engine] patch', function (t) {
   const patchMessage = {
     msgType: 'patch',
     id: doc.id,
-    clientId: doc.clientId,
+    clientId: shadow.clientId,
     edits: [edit]
   };
   syncEngine.patch(patchMessage);
@@ -206,7 +206,7 @@ test('[server-sync-engine] patch but server already has the client version', fun
   syncEngine.addDocument(doc, clientId);
   const shadow = {
     id: doc.id,
-    clientId: doc.clientId,
+    clientId: clientId,
     clientVersion: 0,
     serverVersion: 0,
     content: 'stop calling me Shirley'
@@ -215,7 +215,7 @@ test('[server-sync-engine] patch but server already has the client version', fun
   const patchMessage = {
     msgType: 'patch',
     id: doc.id,
-    clientId: doc.clientId,
+    clientId: clientId,
     edits: [edit]
   };
   syncEngine.patch(patchMessage);
@@ -224,5 +224,48 @@ test('[server-sync-engine] patch but server already has the client version', fun
   const patched = syncEngine.getDocument(doc.id);
   t.equal(patched.content, 'stop calling me Shirley');
   t.equal(datastore.getEdits(doc.id, clientId).length, 0);
+  t.end();
+});
+
+test('[server-sync-engine] restore backup when client hold old serverVersion', function (t) {
+  const synchronizer = new DiffMatchPatchSynchronizer();
+  const store = new InMemoryDataStore();
+  const syncEngine = new SyncEngine(synchronizer, store);
+  const clientId = uuid.v4();
+  const doc = { id: '1234', content: 'stop calling me shirley' };
+  syncEngine.addDocument(doc, clientId);
+
+  var shadow = syncEngine.getShadow(doc.id, clientId);
+  t.equals(shadow.serverVersion, 0);
+  t.equals(shadow.clientVersion, 0);
+  t.equals(store.getShadowBackup(doc.id, clientId).version, 0);
+  // simulate an update on the server that did not make it to the client side,
+  // it was dropped in transit for some reason but the shadow document was updated
+  // as part of the diff on the server. The shadow backup will still have the same
+  // version as the client side shadow.
+  shadow.serverVersion = 1;
+  store.saveShadow(shadow, clientId);
+  t.equals(store.getShadow(doc.id, clientId).serverVersion, 1);
+
+  const update = {
+    id: doc.id,
+    clientId: clientId,
+    clientVersion: 1,
+    serverVersion: 0,
+    content: 'stop calling me Shirley'
+  };
+
+  const edit = synchronizer.clientDiff(doc, update);
+  console.log(edit);
+  const patchMessage = {
+    msgType: 'patch',
+    id: doc.id,
+    clientId: clientId,
+    edits: [edit]
+  };
+  syncEngine.patch(patchMessage);
+  const patched = syncEngine.getDocument(doc.id);
+  t.equal(patched.content, 'stop calling me Shirley');
+  t.equal(store.getEdits(doc.id, clientId).length, 0);
   t.end();
 });
