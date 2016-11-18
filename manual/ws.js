@@ -6,6 +6,8 @@ const SyncEngine = require('../lib/sync-engine.js');
 const WebSocket = require('ws');
 const ws = new WebSocket('ws://localhost:7777/sync');
 
+const clientId = '5678';
+
 const syncEngine = new SyncEngine(new DiffMatchPatchSynchronizer(),
                                   new InMemoryDataStore());
 ws.on('open', function open () {
@@ -16,7 +18,7 @@ ws.on('open', function open () {
   const subscribe = {
     msgType: 'subscribe',
     id: seedDoc.id,
-    clientId: '5678',
+    clientId: clientId,
     content: seedDoc.content
   }
   syncEngine.addDocument(seedDoc, subscribe.clientId);
@@ -39,7 +41,7 @@ ws.on('message', function (data, flags) {
       syncEngine.patch(json);
       const doc = syncEngine.getDocument(json.id);
       doc.content += 1;
-      const p = syncEngine.serverDiff(doc, syncEngine.getShadow(doc.id));
+      const p = syncEngine.serverDiff(doc, syncEngine.getShadow(doc.id, clientId));
       console.log(p);
        //ws.send(JSON.stringify(p));
       break;
