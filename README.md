@@ -67,6 +67,10 @@ If you are using Node 7.x you can use the `--inspect --debug-brk` command line o
 
     $ npm run lint
 
+To automatically fix issues you can use:
+
+    $ $ npm run lint -- --fix
+
 ### Debugging
 
 #### Enable logging
