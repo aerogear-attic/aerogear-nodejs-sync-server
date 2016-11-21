@@ -63,6 +63,11 @@ If you are using Node 7.x you can use the `--inspect --debug-brk` command line o
 > On previous version of Node, use [devtool](https://www.npmjs.com/package/devtool):
 > devtool test/sync-engine-test.js
 
+#### Enable debug logging
+Logging can be enable by setting the `NODE_DEBUG` environment variable to the name of the JavaScript source file you want to enable logging for. For example:
+
+    $ env NODE_DEBUG=sync-engine node index.js
+
 ### Running ESlint
 
     $ npm run lint
@@ -71,12 +76,6 @@ To automatically fix issues you can use:
 
     $ $ npm run lint -- --fix
 
-### Debugging
-
-#### Enable logging
-Logging can be enable by setting the `NODE_DEBUG` environment variable to the name of the JavaScript source file you want to enable logging for. For example:
-
-    $ env NODE_DEBUG=sync-engine node index.js
 
 Multiple JavaScript files can be added if you are interested in more than one by comma separating them.
 
