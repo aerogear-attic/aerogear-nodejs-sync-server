@@ -6,11 +6,10 @@
   "scripts": {
     "test": "tape \"test/**/*.js\" | tap-spec",
     "coverage": "istanbul cover tape -- \"test/**/*.js\"",
-    "lint": "eslint test/ index.js lib",
-    "lint:fix": "eslint --fix test/ index.js lib",
+    "lint": "eslint test/ sync-ws-server.js lib/",
     "prepublish": "nsp check",
     "ci": "npm run lint && npm run coverage && npm run test && npm run prepublish",
-    "start": "node index.js",
+    "start": "env NODE_DEBUG=sync-ws-server node sync-ws-server.js",
     "docs": "./node_modules/.bin/jsdoc --verbose -d docs -t ./node_modules/ink-docstrap/template -R README.md index.js ./lib/*.js"
   },
   "repository": {
